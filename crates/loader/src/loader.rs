@@ -1089,6 +1089,22 @@ impl Loader {
             }
         }
 
+        // Safety check: ensure the compiled library exists before trying to load it.
+        // This catches race conditions where compilation was skipped but the output file
+        // still doesn't exist.
+        if !output_path.exists() {
+            return Err(LoaderError::IO(IoError::new(
+                std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    format!(
+                        "Compiled library not found at {} after build attempt",
+                        output_path.display()
+                    ),
+                ),
+                Some(output_path.as_path()),
+            )));
+        }
+
         Self::load_language(&output_path, &language_fn_name)
     }
 
